@@ -1,3 +1,4 @@
+const canvasWrapper = document.querySelector(".canvas-wrapper");
 const canvas = document.getElementById("game-canvas");
 const context = canvas.getContext("2d");
 
@@ -96,6 +97,14 @@ function startGame() {
     createMovingFloor();
 
     gameLoop();
+    if (window.innerWidth <= 850) {
+    setTimeout(() => {
+        canvasWrapper.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }, 100);
+}
 }
 
 function createMovingFloor() {
