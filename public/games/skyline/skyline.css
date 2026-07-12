@@ -1,0 +1,290 @@
+:root {
+    --cream: #f1eee7;
+    --paper: #faf9f6;
+    --dark: #14211d;
+    --green: #1c332b;
+    --gold: #c8a66b;
+    --muted: #78817d;
+    --line: #d8d8d2;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+}
+
+body {
+    background: var(--paper);
+    color: var(--dark);
+
+    font-family:
+        Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button {
+    font: inherit;
+}
+
+.game-header {
+    height: 90px;
+    padding: 0 5vw;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    border-bottom: 1px solid var(--line);
+}
+
+.brand {
+    display: flex;
+    flex-direction: column;
+}
+
+.brand strong {
+    font-size: 25px;
+    letter-spacing: 5px;
+}
+
+.brand span {
+    margin-top: 2px;
+
+    color: var(--muted);
+
+    font-size: 8px;
+    letter-spacing: 2px;
+}
+
+.exit-link {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.game {
+    min-height: calc(100vh - 90px);
+
+    display: grid;
+    grid-template-columns: 38% 62%;
+}
+
+.game-info {
+    padding: 8vh 5vw;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    border-right: 1px solid var(--line);
+}
+
+.eyebrow {
+    color: var(--muted);
+
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+}
+
+h1 {
+    margin-top: 30px;
+
+    font-size: clamp(55px, 6vw, 90px);
+    font-weight: 400;
+    letter-spacing: -5px;
+    line-height: 0.9;
+}
+
+h1 span {
+    color: var(--green);
+    opacity: 0.45;
+}
+
+.description {
+    max-width: 440px;
+    margin-top: 35px;
+
+    color: var(--muted);
+
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.scoreboard {
+    margin-top: 55px;
+
+    display: flex;
+    gap: 70px;
+}
+
+.scoreboard div {
+    display: flex;
+    flex-direction: column;
+}
+
+.scoreboard span {
+    color: var(--muted);
+
+    font-size: 9px;
+    letter-spacing: 2px;
+}
+
+.scoreboard strong {
+    margin-top: 5px;
+
+    font-size: 42px;
+    font-weight: 400;
+}
+
+#start-button,
+#restart-button {
+    width: fit-content;
+
+    margin-top: 45px;
+    padding: 15px 24px;
+
+    border: 0;
+
+    background: var(--green);
+    color: white;
+
+    font-size: 12px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s,
+        opacity 0.2s;
+}
+
+#start-button:hover,
+#restart-button:hover {
+    transform: translateY(-2px);
+}
+
+#start-button:disabled {
+    opacity: 0.35;
+    cursor: default;
+    transform: none;
+}
+
+.controls {
+    margin-top: 18px;
+
+    color: var(--muted);
+
+    font-size: 8px;
+    letter-spacing: 1.8px;
+}
+
+.canvas-wrapper {
+    min-height: 600px;
+
+    position: relative;
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            180deg,
+            #eef0ea 0%,
+            #dde3dc 100%
+        );
+}
+
+#game-canvas {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    cursor: crosshair;
+}
+
+.game-message {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(20, 33, 29, 0.9);
+    color: white;
+
+    text-align: center;
+}
+
+.game-message.hidden {
+    display: none;
+}
+
+.game-message p {
+    color: var(--gold);
+
+    font-size: 10px;
+    letter-spacing: 2px;
+}
+
+.game-message h2 {
+    margin-top: 15px;
+
+    font-size: 60px;
+    font-weight: 400;
+    letter-spacing: -3px;
+}
+
+#restart-button {
+    background: white;
+    color: var(--dark);
+}
+
+@media (max-width: 850px) {
+    .game-header {
+        height: 75px;
+        padding: 0 22px;
+    }
+
+    .game {
+        min-height: calc(100vh - 75px);
+
+        grid-template-columns: 1fr;
+    }
+
+    .game-info {
+        padding: 55px 22px;
+
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+        letter-spacing: -3px;
+    }
+
+    .scoreboard {
+        margin-top: 35px;
+    }
+
+    .canvas-wrapper {
+        height: 70vh;
+        min-height: 500px;
+    }
+}
