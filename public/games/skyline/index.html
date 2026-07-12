@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Build the Skyline — MAJY</title>
+
+    <link
+        rel="icon"
+        type="image/png"
+        href="/assets/icons/favicon-32x32.png"
+    >
+
+    <link rel="stylesheet" href="skyline.css">
+</head>
+
+<body>
+    <header class="game-header">
+        <a href="/" class="brand">
+            <strong>MAJY</strong>
+            <span>SKYLINE LAB</span>
+        </a>
+
+        <a href="/" class="exit-link">
+            Exit project ↗
+        </a>
+    </header>
+
+    <main class="game">
+        <div class="game-info">
+            <p class="eyebrow">CLASSIFIED PROJECT / 001</p>
+
+            <h1>
+                Build the
+                <span>skyline.</span>
+            </h1>
+
+            <p class="description">
+                Precision is everything. Place each floor and
+                engineer the tallest MAJY tower possible.
+            </p>
+
+            <div class="scoreboard">
+                <div>
+                    <span>FLOORS</span>
+                    <strong id="score">0</strong>
+                </div>
+
+                <div>
+                    <span>BEST</span>
+                    <strong id="best-score">0</strong>
+                </div>
+            </div>
+
+            <button id="start-button">
+                Start construction
+            </button>
+
+            <p class="controls">
+                SPACE / CLICK TO PLACE FLOOR
+            </p>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="game-canvas"></canvas>
+
+            <div id="game-message" class="game-message hidden">
+                <p>STRUCTURAL FAILURE</p>
+                <h2 id="final-score">0 floors</h2>
+
+                <button id="restart-button">
+                    Rebuild
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="skyline.js"></script>
+</body>
+</html>
