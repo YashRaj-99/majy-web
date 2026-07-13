@@ -576,3 +576,53 @@ footer {
         gap: 8px;
     }
 }
+
+/* Easter egg */
+
+.easter-egg-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 35px;
+    z-index: 1000;
+
+    padding: 12px 18px;
+
+    background: var(--dark);
+    color: white;
+
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    font-size: 12px;
+    letter-spacing: 0.4px;
+
+    opacity: 0;
+    visibility: hidden;
+
+    transform: translate(-50%, 15px);
+
+    transition:
+        opacity 0.25s,
+        transform 0.25s,
+        visibility 0.25s;
+
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.easter-egg-toast.visible {
+    opacity: 1;
+    visibility: visible;
+
+    transform: translate(-50%, 0);
+}
+
+@media (max-width: 600px) {
+    .easter-egg-toast {
+        bottom: 25px;
+
+        max-width: calc(100vw - 40px);
+
+        text-align: center;
+        white-space: normal;
+    }
+}
