@@ -1,3 +1,9 @@
+const perfectIcon =
+    document.querySelector(".perfect-stat .stat-icon");
+
+const closeIcon =
+    document.querySelector(".close-stat .stat-icon");
+
 const perfectCountElement =
     document.getElementById("perfect-count");
 
@@ -182,14 +188,14 @@ function placeFloor() {
 
         perfectCount++;
         perfectCountElement.textContent = perfectCount;
-
+        reactIcon(perfectIcon);
         showPrecisionReaction("perfect");
     } else if (
         alignmentDifference <= JUST_MISS_MARGIN
     ) {
         closeCount++;
         closeCountElement.textContent = closeCount;
-
+        reactIcon(perfectIcon);
         showPrecisionReaction("close");
     }
 
@@ -382,6 +388,15 @@ function showPrecisionReaction(type) {
     reactionTimer = setTimeout(() => {
         precisionReaction.classList.remove("visible");
     }, 500);
+}
+
+function reactIcon(icon) {
+    icon.classList.remove("icon-react");
+
+    // Force animation restart
+    void icon.offsetWidth;
+
+    icon.classList.add("icon-react");
 }
 
 startButton.addEventListener("click", startGame);
