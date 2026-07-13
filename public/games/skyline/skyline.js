@@ -1,3 +1,7 @@
+const PERFECT_MARGIN = 4;
+const JUST_MISS_MARGIN = 14;
+
+let placementToastTimer;
 const canvasWrapper = document.querySelector(".canvas-wrapper");
 const canvas = document.getElementById("game-canvas");
 const context = canvas.getContext("2d");
@@ -134,21 +138,36 @@ function placeFloor() {
 
     const previous = floors[floors.length - 1];
 
-    const overlapStart = Math.max(
+    const alignmentDifference = Math.abs(
+        movingFloor.x - previous.x
+    );
+
+    let overlapStart = Math.max(
         movingFloor.x,
         previous.x
     );
 
-    const overlapEnd = Math.min(
+    let overlapEnd = Math.min(
         movingFloor.x + movingFloor.width,
         previous.x + previous.width
     );
 
-    const overlap = overlapEnd - overlapStart;
+    let overlap = overlapEnd - overlapStart;
 
     if (overlap <= 0) {
         endGame();
         return;
+    }
+
+    if (alignmentDifference <= PERFECT_MARGIN) {
+        overlapStart = previous.x;
+        overlap = previous.width;
+
+        showPlacementToast("perfect");
+    } else if (
+        alignmentDifference <= JUST_MISS_MARGIN
+    ) {
+        showPlacementToast("just-missed");
     }
 
     floors.push({
@@ -320,6 +339,42 @@ function gameLoop() {
     draw();
 
     animationFrame = requestAnimationFrame(gameLoop);
+}
+
+function showPlacementToast(type) {
+    const toast = document.createElement("div");
+
+    toast.className = `placement-toast ${type}`;
+
+    if (type === "perfect") {
+        toast.innerHTML = `
+            <span class="toast-emotion">✦</span>
+            <strong>PERFECT!</strong>
+            <small>Precision engineering.</small>
+        `;
+    } else {
+        toast.innerHTML = `
+            <span class="toast-emotion">😮‍💨</span>
+            <strong>JUST MISSED</strong>
+            <small>That was close.</small>
+        `;
+    }
+
+    canvas.parentElement.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.add("visible");
+    });
+
+    clearTimeout(placementToastTimer);
+
+    placementToastTimer = setTimeout(() => {
+        toast.classList.remove("visible");
+
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 900);
 }
 
 startButton.addEventListener("click", startGame);

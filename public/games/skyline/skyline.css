@@ -288,3 +288,110 @@ h1 span {
         min-height: 500px;
     }
 }
+
+/* Placement reactions */
+
+.placement-toast {
+    position: absolute;
+    top: 12%;
+    left: 50%;
+    z-index: 20;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    color: var(--dark);
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    transform: translate(-50%, 15px);
+
+    transition:
+        opacity 0.25s,
+        transform 0.25s;
+}
+
+.placement-toast strong {
+    margin-top: 8px;
+
+    font-size: 20px;
+    letter-spacing: 3px;
+}
+
+.placement-toast small {
+    margin-top: 5px;
+
+    color: var(--muted);
+
+    font-size: 10px;
+    letter-spacing: 1px;
+}
+
+.placement-toast.visible {
+    opacity: 1;
+}
+
+
+/* Perfect */
+
+.placement-toast.perfect.visible {
+    animation: perfect-celebration 0.7s ease;
+}
+
+.placement-toast.perfect .toast-emotion {
+    color: var(--gold);
+
+    font-size: 35px;
+}
+
+@keyframes perfect-celebration {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 20px) scale(0.7);
+    }
+
+    45% {
+        opacity: 1;
+        transform: translate(-50%, -8px) scale(1.15);
+    }
+
+    70% {
+        transform: translate(-50%, 2px) scale(0.95);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
+
+/* Just missed */
+
+.placement-toast.just-missed.visible {
+    animation: just-missed-sigh 0.7s ease;
+}
+
+.placement-toast.just-missed .toast-emotion {
+    font-size: 30px;
+}
+
+@keyframes just-missed-sigh {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -5px);
+    }
+
+    40% {
+        opacity: 1;
+        transform: translate(-50%, 3px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(-50%, 10px);
+    }
+}
