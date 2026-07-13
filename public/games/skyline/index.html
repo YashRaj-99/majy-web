@@ -67,6 +67,32 @@
         </div>
 
         <div class="canvas-wrapper">
+            <div class="precision-panel">
+    <p>PRECISION</p>
+
+    <div class="precision-stat perfect-stat">
+        <span class="stat-icon">✦</span>
+
+        <div>
+            <strong id="perfect-count">0</strong>
+            <small>PERFECT</small>
+        </div>
+    </div>
+
+    <div class="precision-stat close-stat">
+        <span class="stat-icon">≈</span>
+
+        <div>
+            <strong id="close-count">0</strong>
+            <small>CLOSE</small>
+        </div>
+    </div>
+
+    <div
+        id="precision-reaction"
+        class="precision-reaction"
+    ></div>
+</div>
             <canvas id="game-canvas"></canvas>
 
             <div id="game-message" class="game-message hidden">

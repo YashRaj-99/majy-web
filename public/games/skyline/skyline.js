@@ -1,3 +1,15 @@
+const perfectCountElement =
+    document.getElementById("perfect-count");
+
+const closeCountElement =
+    document.getElementById("close-count");
+
+const precisionReaction =
+    document.getElementById("precision-reaction");
+
+let perfectCount = 0;
+let closeCount = 0;
+let reactionTimer;
 const PERFECT_MARGIN = 4;
 const JUST_MISS_MARGIN = 14;
 
@@ -70,6 +82,11 @@ function drawIdleState() {
 
 function startGame() {
     cancelAnimationFrame(animationFrame);
+    perfectCount = 0;
+    closeCount = 0;
+
+    perfectCountElement.textContent = "0";
+    closeCountElement.textContent = "0";
 
     score = 0;
     speed = 3;
@@ -163,11 +180,17 @@ function placeFloor() {
         overlapStart = previous.x;
         overlap = previous.width;
 
-        showPlacementToast("perfect");
+        perfectCount++;
+        perfectCountElement.textContent = perfectCount;
+
+        showPrecisionReaction("perfect");
     } else if (
         alignmentDifference <= JUST_MISS_MARGIN
     ) {
-        showPlacementToast("just-missed");
+        closeCount++;
+        closeCountElement.textContent = closeCount;
+
+        showPrecisionReaction("close");
     }
 
     floors.push({
@@ -341,40 +364,24 @@ function gameLoop() {
     animationFrame = requestAnimationFrame(gameLoop);
 }
 
-function showPlacementToast(type) {
-    const toast = document.createElement("div");
+function showPrecisionReaction(type) {
+    clearTimeout(reactionTimer);
 
-    toast.className = `placement-toast ${type}`;
+    precisionReaction.className =
+        `precision-reaction ${type}`;
 
-    if (type === "perfect") {
-        toast.innerHTML = `
-            <span class="toast-emotion">✦</span>
-            <strong>PERFECT!</strong>
-            <small>Precision engineering.</small>
-        `;
-    } else {
-        toast.innerHTML = `
-            <span class="toast-emotion">😮‍💨</span>
-            <strong>JUST MISSED</strong>
-            <small>That was close.</small>
-        `;
-    }
-
-    canvas.parentElement.appendChild(toast);
+    precisionReaction.textContent =
+        type === "perfect"
+            ? "✦ PERFECT"
+            : "SO CLOSE…";
 
     requestAnimationFrame(() => {
-        toast.classList.add("visible");
+        precisionReaction.classList.add("visible");
     });
 
-    clearTimeout(placementToastTimer);
-
-    placementToastTimer = setTimeout(() => {
-        toast.classList.remove("visible");
-
-        setTimeout(() => {
-            toast.remove();
-        }, 300);
-    }, 900);
+    reactionTimer = setTimeout(() => {
+        precisionReaction.classList.remove("visible");
+    }, 500);
 }
 
 startButton.addEventListener("click", startGame);
