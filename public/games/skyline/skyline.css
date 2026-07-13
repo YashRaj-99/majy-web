@@ -400,8 +400,8 @@ h1 span {
 
 .precision-panel {
     position: absolute;
-    top: 30px;
-    right: 30px;
+    top: 50%;
+    right: 24px;
     z-index: 10;
 
     width: 120px;
@@ -411,6 +411,8 @@ h1 span {
     border: 1px solid rgba(28, 51, 43, 0.12);
 
     backdrop-filter: blur(8px);
+
+    transform: translateY(-50%);
 }
 
 .precision-panel > p {
@@ -494,6 +496,35 @@ h1 span {
     }
 }
 
+@media (max-width: 600px) {
+    .precision-panel {
+        top: 15px;
+        right: 15px;
+
+        width: auto;
+        padding: 10px 14px;
+
+        display: grid;
+        grid-template-columns: auto auto;
+        gap: 8px 18px;
+
+        transform: none;
+    }
+
+    .precision-panel > p {
+        grid-column: 1 / -1;
+        margin-bottom: 2px;
+    }
+
+    .precision-stat {
+        margin-top: 0;
+    }
+
+    .precision-reaction {
+        grid-column: 1 / -1;
+        margin-top: 2px;
+    }
+}
 /* Precision icon reactions */
 
 .perfect-stat .stat-icon.icon-react {
