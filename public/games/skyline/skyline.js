@@ -164,6 +164,24 @@ function updateBestProjectCard() {
     `;
 }
 
+saveProjectButton.addEventListener("click", () => {
+
+    const name =
+        engineerInput.value.trim();
+
+    if (!name) {
+        engineerInput.focus();
+        return;
+    }
+
+    saveProject(name);
+
+    recordContainer.classList.add("hidden");
+
+    updateBestProjectCard();
+});
+
+
 function drawIdleState() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -352,6 +370,21 @@ function endGame() {
         `${score} ${score === 1 ? "floor" : "floors"}`;
 
     gameMessage.classList.remove("hidden");
+    updateBestProjectCard();
+
+    if (isNewProjectRecord()) {
+    
+        recordContainer.classList.remove("hidden");
+    
+        engineerInput.value = "";
+    
+        engineerInput.focus();
+    
+    } else {
+    
+        recordContainer.classList.add("hidden");
+    
+    }
 }
 
 function update() {
