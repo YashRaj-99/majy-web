@@ -61,6 +61,18 @@ const perfectIcon =
 const closeIcon =
     document.querySelector(".close-stat .stat-icon");
 
+const recordContainer =
+    document.getElementById("record-container");
+
+const engineerInput =
+    document.getElementById("engineer-name");
+
+const saveProjectButton =
+    document.getElementById("save-project");
+
+const bestProjectElement =
+    document.getElementById("best-project");
+
 const perfectCountElement =
     document.getElementById("perfect-count");
 
@@ -126,6 +138,30 @@ function resizeCanvas() {
     if (!running) {
         drawIdleState();
     }
+}
+
+function updateBestProjectCard() {
+
+    const best = getBestProject();
+
+    if (!best) {
+
+        bestProjectElement.innerHTML = "";
+
+        return;
+    }
+
+    bestProjectElement.innerHTML = `
+
+        <h3>Best Project</h3>
+
+        <p><strong>${best.name}</strong></p>
+
+        <p>${best.height} Floors</p>
+
+        <p>${best.precision}% Precision</p>
+
+    `;
 }
 
 function drawIdleState() {
