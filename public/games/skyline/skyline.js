@@ -1,3 +1,60 @@
+const BEST_PROJECT_KEY = "majy-best-project";
+
+function getPrecision() {
+    if (score === 0) return 0;
+
+    return Number(
+        (((perfectCount + closeCount) / score) * 100).toFixed(1)
+    );
+}
+
+function getBestProject() {
+    const project = localStorage.getItem(BEST_PROJECT_KEY);
+
+    if (!project) {
+        return null;
+    }
+
+    return JSON.parse(project);
+}
+
+function isNewProjectRecord() {
+    const best = getBestProject();
+
+    const precision = getPrecision();
+
+    if (!best) {
+        return true;
+    }
+
+    if (score > best.height) {
+        return true;
+    }
+
+    if (
+        score === best.height &&
+        precision > best.precision
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
+function saveProject(name) {
+    localStorage.setItem(
+        BEST_PROJECT_KEY,
+        JSON.stringify({
+            name,
+            height: score,
+            precision: getPrecision(),
+            perfect: perfectCount,
+            close: closeCount,
+            date: new Date().toISOString()
+        })
+    );
+}
+
 const perfectIcon =
     document.querySelector(".perfect-stat .stat-icon");
 
