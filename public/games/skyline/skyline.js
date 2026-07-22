@@ -1,8 +1,77 @@
+const BEST_PROJECT_KEY = "majy-best-project";
+
+function getPrecision() {
+    if (score === 0) return 0;
+
+    return Number(
+        (((perfectCount + closeCount) / score) * 100).toFixed(1)
+    );
+}
+
+function getBestProject() {
+    const project = localStorage.getItem(BEST_PROJECT_KEY);
+
+    if (!project) {
+        return null;
+    }
+
+    return JSON.parse(project);
+}
+
+function isNewProjectRecord() {
+    const best = getBestProject();
+
+    const precision = getPrecision();
+
+    if (!best) {
+        return true;
+    }
+
+    if (score > best.height) {
+        return true;
+    }
+
+    if (
+        score === best.height &&
+        precision > best.precision
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
+function saveProject(name) {
+    localStorage.setItem(
+        BEST_PROJECT_KEY,
+        JSON.stringify({
+            name,
+            height: score,
+            precision: getPrecision(),
+            perfect: perfectCount,
+            close: closeCount,
+            date: new Date().toISOString()
+        })
+    );
+}
+
 const perfectIcon =
     document.querySelector(".perfect-stat .stat-icon");
 
 const closeIcon =
     document.querySelector(".close-stat .stat-icon");
+
+const recordContainer =
+    document.getElementById("record-container");
+
+const engineerInput =
+    document.getElementById("engineer-name");
+
+const saveProjectButton =
+    document.getElementById("save-project");
+
+const bestProjectElement =
+    document.getElementById("best-project");
 
 const perfectCountElement =
     document.getElementById("perfect-count");
@@ -70,6 +139,48 @@ function resizeCanvas() {
         drawIdleState();
     }
 }
+
+function updateBestProjectCard() {
+
+    const best = getBestProject();
+
+    if (!best) {
+
+        bestProjectElement.innerHTML = "";
+
+        return;
+    }
+
+    bestProjectElement.innerHTML = `
+
+        <h3>Best Project</h3>
+
+        <p><strong>${best.name}</strong></p>
+
+        <p>${best.height} Floors</p>
+
+        <p>${best.precision}% Precision</p>
+
+    `;
+}
+
+saveProjectButton.addEventListener("click", () => {
+
+    const name =
+        engineerInput.value.trim();
+
+    if (!name) {
+        engineerInput.focus();
+        return;
+    }
+
+    saveProject(name);
+
+    recordContainer.classList.add("hidden");
+
+    updateBestProjectCard();
+});
+
 
 function drawIdleState() {
     context.clearRect(0, 0, canvas.width, canvas.height);
@@ -259,6 +370,21 @@ function endGame() {
         `${score} ${score === 1 ? "floor" : "floors"}`;
 
     gameMessage.classList.remove("hidden");
+    updateBestProjectCard();
+
+    if (isNewProjectRecord()) {
+    
+        recordContainer.classList.remove("hidden");
+    
+        engineerInput.value = "";
+    
+        engineerInput.focus();
+    
+    } else {
+    
+        recordContainer.classList.add("hidden");
+    
+    }
 }
 
 function update() {
