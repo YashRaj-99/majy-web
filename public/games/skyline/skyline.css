@@ -579,3 +579,54 @@ h1 span {
         transform: translateX(2px);
     }
 }
+
+.record-container {
+
+    margin-top: 20px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+}
+
+.record-container.hidden {
+    display: none;
+}
+
+.record-container input {
+
+    padding: 12px;
+
+    font-size: 15px;
+
+    border: 1px solid #d9d9d9;
+
+    border-radius: 8px;
+}
+
+.record-container button {
+
+    cursor: pointer;
+
+    padding: 12px;
+
+    background: var(--gold);
+
+    border: none;
+
+    border-radius: 8px;
+
+    color: white;
+}
+
+.best-project {
+
+    margin-top: 20px;
+
+    text-align: center;
+
+    color: var(--muted);
+
+    font-size: 14px;
+}
