@@ -1,8 +1,11 @@
 const COURSE_DAYS = [
-  ["Stock Market Fundamentals","03 Nov 2026"],["Candlesticks and Price Action","04 Nov 2026"],
-  ["Technical Indicators","05 Nov 2026"],["Trading Strategies","06 Nov 2026"],
-  ["Quantitative Trading and Mathematics","07 Nov 2026"],["Algo Trading and Backtesting","08 Nov 2026"],
-  ["Risk Management, AI and System Design","09 Nov 2026"]
+  ["Stock Market Fundamentals","02 Nov 2026"],
+  ["Candlesticks and Price Action","03 Nov 2026"],
+  ["Technical Indicators","04 Nov 2026"],
+  ["Trading Strategies","05 Nov 2026"],
+  ["Quantitative Trading and Mathematics","06 Nov 2026"],
+  ["Algo Trading and Backtesting","07 Nov 2026"],
+  ["Risk Management, AI and System Design","08 Nov 2026"]
 ];
 const STORE_KEY = "majy-academy-progress-v1";
 function readProgress(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||"{}")}catch{return {}}}
