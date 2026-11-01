@@ -1,3 +1,4 @@
+
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "majy-web",
@@ -10,8 +11,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "MAJY_Academy_DB",
-      "database_id": "REPLACE_WITH_YOUR_CLOUDFLARE_D1_DATABASE_ID",
+      "database_name": "majy_academy_db",
+      "database_id": "3e9bc6f8-9216-42d4-96a2-f1db0c455a2a",
       "migrations_dir": "migrations"
     }
   ],
