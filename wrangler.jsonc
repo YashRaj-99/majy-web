@@ -1,7 +1,32 @@
+
 {
-    "name": "majy-web",
-    "compatibility_date": "2026-07-11",
-    "assets": {
-        "directory": "./public"
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "majy-web",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-07-11",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "majy_academy_db",
+      "database_id": "3e9bc6f8-9216-42d4-96a2-f1db0c455a2a",
+      "migrations_dir": "migrations"
     }
+  ],
+    "triggers": {
+    "crons": ["30 2 * * *"]
+  },
+  "previews": {
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "majy_academy_preview_db",
+        "database_id": "26405f15-89e4-4a87-8bff-249b4d74b014",
+        "migrations_dir": "migrations"
+      }
+    ]
+  }
 }
