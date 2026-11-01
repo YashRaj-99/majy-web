@@ -31,7 +31,7 @@ Recommended: create a branch in GitHub named `feature/majy-academy`, add these f
 
 The Cron expression `30 2 * * *` runs at 02:30 UTC, which is 08:00 India Standard Time. The scheduled handler publishes any lesson whose `publish_date` is today or earlier in Asia/Kolkata. The API also performs the same due-publication check when a learner opens the dashboard, so a delayed Cron run does not keep a due lesson hidden.
 
-The seven lessons are dated 3–9 November 2026. They are preloaded as `scheduled`; the first one becomes available at 08:00 IST on 3 November 2026.
+The seven lessons are dated 2–8 November 2026. They are preloaded as `scheduled`; the first one becomes available at 08:00 IST on 2 November 2026.
 
 ## Progress and privacy
 
