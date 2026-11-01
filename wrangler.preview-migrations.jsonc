@@ -1,0 +1,10 @@
+{
+  "d1_databases": [
+    {
+      "binding": "PREVIEW_DB",
+      "database_name": "majy_academy_preview_db",
+      "database_id": "26405f15-89e4-4a87-8bff-249b4d74b014",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
