@@ -26,9 +26,10 @@ async function submitQuiz(e){
  e.preventDefault();
  const formElement = e.currentTarget;
  const form = new FormData(formElement);
- e.preventDefault(); const form=new FormData(e.currentTarget);
  const answers=quizQuestions.map(q=>({id:q.id,answer:Number(form.get(q.id))}));
- const button=formElement.querySelector("button"); button.disabled=true; button.textContent="Checking…";
+ const button=formElement.querySelector("button");
+ button.disabled=true;
+ button.textContent="Checking…";
  try{
   const res=await fetch(`/api/academy/quiz/${day}`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({answers})});
   const data=await res.json(); if(!res.ok) throw new Error(data.error||"Could not score quiz");
