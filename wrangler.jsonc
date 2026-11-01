@@ -16,10 +16,9 @@
       "migrations_dir": "migrations"
     }
   ],
-  "triggers": {
+    "triggers": {
     "crons": ["30 2 * * *"]
-  }
-},
+  },
   "previews": {
     "d1_databases": [
       {
@@ -30,3 +29,4 @@
       }
     ]
   }
+}
