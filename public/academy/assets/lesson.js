@@ -23,9 +23,12 @@ function renderQuiz(){
  document.getElementById("quiz-form").addEventListener("submit",submitQuiz);
 }
 async function submitQuiz(e){
+ e.preventDefault();
+ const formElement = e.currentTarget;
+ const form = new FormData(formElement);
  e.preventDefault(); const form=new FormData(e.currentTarget);
  const answers=quizQuestions.map(q=>({id:q.id,answer:Number(form.get(q.id))}));
- const button=e.currentTarget.querySelector("button"); button.disabled=true; button.textContent="Checking…";
+ const button=formElement.querySelector("button"); button.disabled=true; button.textContent="Checking…";
  try{
   const res=await fetch(`/api/academy/quiz/${day}`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({answers})});
   const data=await res.json(); if(!res.ok) throw new Error(data.error||"Could not score quiz");
@@ -33,7 +36,7 @@ async function submitQuiz(e){
   document.getElementById("quiz-result").innerHTML=`<div class="result-card"><div class="section-kicker">YOUR SCORE</div><div class="score-big">${data.score}<small> / ${data.total}</small></div><h3>${data.percentage>=80?"Excellent work":data.percentage>=60?"Good effort":"Keep practising"}</h3><p>${data.percentage}% correct · Your result is saved in this browser.</p></div>
   ${data.results.map((r,i)=>`<div class="answer-review ${r.correct?"correct":"incorrect"}"><strong>${r.correct?"Correct":"Review"} · Q${i+1}</strong><p>${esc(r.explanation)}</p>${!r.correct?`<small>Correct answer: ${esc(quizQuestions[i].options[r.correctAnswer])}</small>`:""}</div>`).join("")}
   <a class="primary-button inline-button" href="/academy/">Return to course dashboard</a>`;
-  e.currentTarget.querySelectorAll("input").forEach(x=>x.disabled=true);
+  formElement.querySelectorAll("input").forEach(x=>x.disabled=true);
  }catch(err){document.getElementById("quiz-result").innerHTML=`<p class="error">${esc(err.message)}</p>`;button.disabled=false;button.textContent="Try again"}
 }
 async function init(){
