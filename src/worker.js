@@ -1,3 +1,5 @@
+import { handleAcademyAuth } from "./academy-auth.js";
+
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -42,6 +44,9 @@ async function publishDueLessons(db) {
 }
 
 async function handleApi(request, env, url) {
+  if (url.pathname.startsWith("/api/academy/auth/")) {
+    return handleAcademyAuth(request, env, url);
+  }
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: {
       "access-control-allow-origin": "*",
