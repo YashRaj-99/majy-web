@@ -151,10 +151,18 @@ If you did not request this, ignore this email.
 </html>`;
 }
 
+
 async function sendEmail(env, to, subject, html) {
   if (!env.RESEND_API_KEY) {
     throw new Error("RESEND_API_KEY is not configured.");
   }
+
+  const payload = {
+    from: "MAJY Academy <academy@majy.in>",
+    to: [to],
+    subject,
+    html
+  };
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -162,22 +170,39 @@ async function sendEmail(env, to, subject, html) {
       "authorization": "Bearer " + env.RESEND_API_KEY,
       "content-type": "application/json"
     },
-    body: JSON.stringify({
-      from: "MAJY Academy <academy@majy.in>",
-      to: [to],
-      subject,
-      html
-    })
+    body: JSON.stringify(payload)
   });
 
+  const detail = await response.text();
+
   if (!response.ok) {
-    const detail = await response.text();
-  
+    const safeDetail = detail
+      .replaceAll(to, "[recipient redacted]")
+      .slice(0, 400);
+
+    console.error("Resend diagnostic:", {
+      status: response.status,
+      statusText: response.statusText,
+      responseBody: safeDetail,
+      contentType: response.headers.get("content-type"),
+      resendId: response.headers.get("x-resend-id"),
+      sender: "academy@majy.in",
+      recipientDomain: to.split("@")[1] || "unknown",
+      subject,
+      htmlLength: html.length
+    });
+
     throw new Error(
-      `Resend rejected email. HTTP ${response.status}: ${detail.slice(0, 400)}`
+      `Resend rejected email. HTTP ${response.status}: ${safeDetail || "Empty response body"}`
     );
   }
+
+  console.log("Resend email accepted:", {
+    status: response.status,
+    recipientDomain: to.split("@")[1] || "unknown"
+  });
 }
+
 
 async function createToken(db, userId, type, expiry) {
   const token = randomToken();
