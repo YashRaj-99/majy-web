@@ -119,15 +119,7 @@ export default {
       try { return await handleApi(request, env, url); }
       catch (error) {
         console.error("Academy API error:", error);
-      
-        const diagnostic = error instanceof Error
-          ? `${error.name}: ${error.message}`
-          : "Unknown error";
-      
-        return json({
-          error: "Academy service is temporarily unavailable.",
-          diagnostic: diagnostic.slice(0, 250)
-        }, 500);
+        return json({ error: "Academy service is temporarily unavailable." }, 500);
       }
     }
     return env.ASSETS.fetch(request);
