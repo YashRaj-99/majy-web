@@ -172,12 +172,10 @@ async function sendEmail(env, to, subject, html) {
 
   if (!response.ok) {
     const detail = await response.text();
-    console.error(
-      "Resend delivery failed:",
-      response.status,
-      detail.slice(0, 400)
+  
+    throw new Error(
+      `Resend rejected email. HTTP ${response.status}: ${detail.slice(0, 400)}`
     );
-    throw new Error("Email delivery failed.");
   }
 }
 
