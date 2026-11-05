@@ -3,7 +3,7 @@ const SESSION_COOKIE = "__Host-majy_academy_session";
 const SESSION_DAYS = 30;
 const VERIFY_HOURS = 24;
 const RESET_MINUTES = 30;
-const PBKDF2_ITERATIONS = 310000;
+const PBKDF2_ITERATIONS = 100000;
 
 const json = (data, status = 200, headers = {}) =>
   new Response(JSON.stringify(data), {
