@@ -189,7 +189,15 @@ async function sendEmail(env, to, subject, html) {
       sender: "academy@majy.in",
       recipientDomain: to.split("@")[1] || "unknown",
       subject,
-      htmlLength: html.length
+      htmlLength: html.length,
+      requestPayload: {
+        ...payload,
+        to: ["[recipient redacted]"],
+        html: html.replace(
+          /([?&]token=)[^&"'\s]+/gi,
+          "$1[redacted]"
+        )
+      }
     });
 
     throw new Error(
