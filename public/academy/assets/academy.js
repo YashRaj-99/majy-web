@@ -44,7 +44,8 @@ async function syncAccountProgress(email) {
         day_number: Number(day),
         completed: true,
         score: Number(item.score),
-        total: Number(item.total)
+        total: Number(item.total),
+        answers: Array.isArray(item.answers) ? item.answers : []
       }));
 
     if (entries.length) {
@@ -79,6 +80,7 @@ async function syncAccountProgress(email) {
       score: item.score,
       total: item.total,
       percentage: item.percentage,
+      answers: Array.isArray(item.answers) ? item.answers : [],
       completedAt: item.completed_at
     };
   }
