@@ -608,6 +608,122 @@ export async function handleAcademyAuth(request, env, url) {
     );
   }
 
+  // GET / MERGE ACADEMY PROGRESS
+  if (
+    path === "/api/academy/auth/progress" &&
+    request.method === "GET"
+  ) {
+    const user = await getSessionUser(request, db);
+
+    if (!user) {
+      return json({ error: "Please log in to access your progress." }, 401);
+    }
+
+    const { results } = await db.prepare(`
+      SELECT
+        day_number,
+        completed,
+        score,
+        total,
+        percentage,
+        completed_at,
+        updated_at
+      FROM academy_user_progress
+      WHERE user_id = ?
+      ORDER BY day_number
+    `).bind(user.user_id).all();
+
+    return json({ progress: results });
+  }
+
+  // MERGE GUEST BROWSER PROGRESS INTO ACCOUNT
+  if (
+    path === "/api/academy/auth/progress" &&
+    request.method === "POST"
+  ) {
+    const user = await getSessionUser(request, db);
+
+    if (!user) {
+      return json({ error: "Please log in to save your progress." }, 401);
+    }
+
+    let body;
+
+    try {
+      body = await readJson(request);
+    } catch {
+      return json({ error: "Invalid progress data." }, 400);
+    }
+
+    if (!Array.isArray(body.progress) || body.progress.length > 7) {
+      return json({ error: "Invalid progress data." }, 400);
+    }
+
+    const statements = [];
+
+    for (const item of body.progress) {
+      const day = Number(item.day_number);
+      const score = Number(item.score);
+      const total = Number(item.total);
+
+      if (
+        !Number.isInteger(day) || day < 1 || day > 7 ||
+        item.completed !== true ||
+        !Number.isInteger(score) || score < 0 || score > 3 ||
+        total !== 3
+      ) {
+        return json({ error: "Invalid lesson progress entry." }, 400);
+      }
+
+      const percentage = Math.round((score / total) * 100);
+
+      statements.push(db.prepare(`
+        INSERT INTO academy_user_progress (
+          user_id,
+          day_number,
+          completed,
+          score,
+          total,
+          percentage,
+          completed_at,
+          updated_at
+        )
+        VALUES (?, ?, 1, ?, 3, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON CONFLICT(user_id, day_number)
+        DO UPDATE SET
+          completed = 1,
+          score = MAX(
+            COALESCE(academy_user_progress.score, 0),
+            excluded.score
+          ),
+          total = 3,
+          percentage = MAX(
+            COALESCE(academy_user_progress.percentage, 0),
+            excluded.percentage
+          ),
+          completed_at = COALESCE(
+            academy_user_progress.completed_at,
+            excluded.completed_at
+          ),
+          updated_at = CURRENT_TIMESTAMP
+      `).bind(
+        user.user_id,
+        day,
+        score,
+        percentage
+      ));
+    }
+
+    if (statements.length) {
+      await db.batch(statements);
+    }
+
+    return json({
+      message: "Guest progress merged successfully.",
+      merged: statements.length
+    });
+  }
+  
   // FORGOT PASSWORD
   if (
     path === "/api/academy/auth/forgot-password" &&
