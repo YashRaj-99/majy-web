@@ -115,14 +115,18 @@ async function handleApi(request, env, url) {
     const percentage = Math.round(score / total * 100);
     
     // Save the server-calculated result for logged-in learners.
-    await saveAcademyQuizProgress(
-      request,
-      env,
-      day,
-      score,
-      total,
-      percentage
-    );
+   await saveAcademyQuizProgress(
+    request,
+    env,
+    day,
+    score,
+    total,
+    percentage,
+    results.map(result => ({
+      id: result.id,
+      selected: result.selected
+    }))
+  );
     
     return json({ day, score, total, percentage, results });
   }
