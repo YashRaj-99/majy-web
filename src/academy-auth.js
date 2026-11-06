@@ -669,7 +669,7 @@ export async function handleAcademyAuth(request, env, url) {
     );
   }
 
-  // GET / MERGE ACADEMY PROGRESS
+    // GET / MERGE ACADEMY PROGRESS
   if (
     path === "/api/academy/auth/progress" &&
     request.method === "GET"
@@ -687,6 +687,7 @@ export async function handleAcademyAuth(request, env, url) {
         score,
         total,
         percentage,
+        answers_json,
         completed_at,
         updated_at
       FROM academy_user_progress
@@ -694,7 +695,24 @@ export async function handleAcademyAuth(request, env, url) {
       ORDER BY day_number
     `).bind(user.user_id).all();
 
-    return json({ progress: results });
+    const progress = results.map(item => {
+      let answers = [];
+
+      try {
+        answers = item.answers_json
+          ? JSON.parse(item.answers_json)
+          : [];
+      } catch {
+        answers = [];
+      }
+
+      return {
+        ...item,
+        answers
+      };
+    });
+
+    return json({ progress });
   }
 
   // MERGE GUEST BROWSER PROGRESS INTO ACCOUNT
@@ -736,6 +754,26 @@ export async function handleAcademyAuth(request, env, url) {
         return json({ error: "Invalid lesson progress entry." }, 400);
       }
 
+      let answersJson = null;
+
+      if (Array.isArray(item.answers)) {
+        if (
+          item.answers.length !== 3 ||
+          item.answers.some(answer =>
+            !answer ||
+            typeof answer.id !== "string" ||
+            !answer.id.trim() ||
+            !Number.isInteger(answer.selected) ||
+            answer.selected < 0 ||
+            answer.selected > 3
+          )
+        ) {
+          return json({ error: "Invalid quiz answers." }, 400);
+        }
+
+        answersJson = JSON.stringify(item.answers);
+      }
+
       const percentage = Math.round((score / total) * 100);
 
       statements.push(db.prepare(`
@@ -746,13 +784,20 @@ export async function handleAcademyAuth(request, env, url) {
           score,
           total,
           percentage,
+          answers_json,
           completed_at,
           updated_at
         )
-        VALUES (?, ?, 1, ?, 3, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        VALUES (?, ?, 1, ?, 3, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         ON CONFLICT(user_id, day_number)
         DO UPDATE SET
           completed = 1,
+          answers_json = CASE
+            WHEN excluded.score >= COALESCE(academy_user_progress.score, 0)
+              AND excluded.answers_json IS NOT NULL
+            THEN excluded.answers_json
+            ELSE academy_user_progress.answers_json
+          END,
           score = MAX(
             COALESCE(academy_user_progress.score, 0),
             excluded.score
@@ -771,7 +816,8 @@ export async function handleAcademyAuth(request, env, url) {
         user.user_id,
         day,
         score,
-        percentage
+        percentage,
+        answersJson
       ));
     }
 
