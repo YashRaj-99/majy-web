@@ -147,10 +147,143 @@ function renderLesson(l){
   <section class="content-card"><div class="section-kicker">QUICK REVISION</div><ul class="objective-list">${c.takeaways.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>
   <div class="quiz-intro"><div class="section-kicker">CHECK YOUR UNDERSTANDING</div><h2>Quick knowledge check</h2><p>Answer all three questions. You’ll see your score and an explanation for every answer.</p></div>`;
 }
-function renderQuiz(){
- const area=document.getElementById("quiz-area"); area.hidden=false;
- area.innerHTML=`<form id="quiz-form">${quizQuestions.map((q,i)=>`<fieldset class="question"><legend><span>QUESTION ${i+1}</span>${esc(q.question)}</legend><div class="answers">${q.options.map((o,j)=>`<label class="answer"><input type="radio" name="${q.id}" value="${j}" required><span>${esc(o)}</span></label>`).join("")}</div></fieldset>`).join("")}<button class="primary-button" type="submit">Submit answers</button></form><div id="quiz-result"></div>`;
- document.getElementById("quiz-form").addEventListener("submit",submitQuiz);
+async function renderQuiz() {
+  const area = document.getElementById("quiz-area");
+  area.hidden = false;
+
+  const savedProgress = getProgress()[day];
+  const savedAnswers = Array.isArray(savedProgress?.answers)
+    ? savedProgress.answers
+    : [];
+
+  const savedAnswerMap = new Map(
+    savedAnswers.map(answer => [answer.id, answer.selected])
+  );
+
+  const hasReviewableAttempt =
+    savedProgress?.completed &&
+    quizQuestions.length === 3 &&
+    quizQuestions.every(q =>
+      Number.isInteger(savedAnswerMap.get(q.id)) &&
+      savedAnswerMap.get(q.id) >= 0 &&
+      savedAnswerMap.get(q.id) < q.options.length
+    );
+
+  area.innerHTML = `
+    ${hasReviewableAttempt
+      ? `<div class="result-card">
+           <div class="section-kicker">PREVIOUS ATTEMPT</div>
+           <p>Your saved answers are shown below in review mode.</p>
+         </div>`
+      : savedProgress?.completed
+        ? `<div class="result-card">
+             <div class="section-kicker">PREVIOUS ATTEMPT</div>
+             <p>This earlier attempt was saved without answer selections.
+             Retake the quiz once to create a complete review record.</p>
+           </div>`
+        : ""
+    }
+
+    <form id="quiz-form">
+      ${quizQuestions.map((q, i) => `
+        <fieldset class="question">
+          <legend>
+            <span>QUESTION ${i + 1}</span>
+            ${esc(q.question)}
+          </legend>
+          <div class="answers">
+            ${q.options.map((option, j) => `
+              <label class="answer">
+                <input
+                  type="radio"
+                  name="${q.id}"
+                  value="${j}"
+                  ${hasReviewableAttempt && savedAnswerMap.get(q.id) === j ? "checked" : ""}
+                  ${hasReviewableAttempt ? "disabled" : ""}
+                  ${!hasReviewableAttempt ? "required" : ""}
+                >
+                <span>${esc(option)}</span>
+              </label>
+            `).join("")}
+          </div>
+        </fieldset>
+      `).join("")}
+
+      <button
+        class="primary-button"
+        type="submit"
+        ${hasReviewableAttempt ? "hidden" : ""}
+      >
+        Submit answers
+      </button>
+    </form>
+
+    <div id="quiz-result"></div>
+  `;
+
+  if (!hasReviewableAttempt) {
+    document.getElementById("quiz-form")
+      .addEventListener("submit", submitQuiz);
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/academy/quiz/${day}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        answers: savedAnswers.map(answer => ({
+          id: answer.id,
+          answer: answer.selected
+        }))
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not load quiz review.");
+    }
+
+    document.getElementById("quiz-result").innerHTML = `
+      <div class="result-card">
+        <div class="section-kicker">YOUR PREVIOUS SCORE</div>
+        <div class="score-big">
+          ${data.score}<small> / ${data.total}</small>
+        </div>
+        <h3>
+          ${data.percentage >= 80
+            ? "Excellent work"
+            : data.percentage >= 60
+              ? "Good effort"
+              : "Keep practising"}
+        </h3>
+        <p>${data.percentage}% correct · Your saved attempt is being reviewed.</p>
+      </div>
+
+      ${data.results.map((result, i) => `
+        <div class="answer-review ${result.correct ? "correct" : "incorrect"}">
+          <strong>
+            ${result.correct ? "Correct" : "Review"} · Q${i + 1}
+          </strong>
+          <p>${esc(result.explanation)}</p>
+          ${!result.correct
+            ? `<small>Correct answer: ${esc(
+                quizQuestions[i].options[result.correctAnswer]
+              )}</small>`
+            : ""}
+        </div>
+      `).join("")}
+
+      <a class="primary-button inline-button" href="/academy/">
+        Return to course dashboard
+      </a>
+    `;
+  } catch (error) {
+    document.getElementById("quiz-result").innerHTML = `
+      <p class="error">${esc(error.message)}</p>
+    `;
+  }
 }
 async function submitQuiz(e){
  e.preventDefault();
