@@ -9,13 +9,83 @@ const COURSE_DAYS = [
 ];
 
 const STORE_KEY = "majy-academy-progress-v1";
+const ACCOUNT_STORE_PREFIX = "majy-academy-progress-account-v1:";
+let activeProgressKey = STORE_KEY;
+
+function accountProgressKey(email) {
+  return ACCOUNT_STORE_PREFIX + encodeURIComponent(email.toLowerCase());
+}
 
 function readProgress() {
   try {
-    return JSON.parse(localStorage.getItem(STORE_KEY) || "{}");
+    return JSON.parse(localStorage.getItem(activeProgressKey) || "{}");
   } catch {
     return {};
   }
+}
+
+function writeProgress(progress) {
+  localStorage.setItem(activeProgressKey, JSON.stringify(progress));
+}
+
+async function syncAccountProgress(email) {
+  const accountKey = accountProgressKey(email);
+  const accountCacheExists = localStorage.getItem(accountKey) !== null;
+
+  // Only merge guest progress into this account the first time.
+  if (!accountCacheExists) {
+    const guestProgress = JSON.parse(
+      localStorage.getItem(STORE_KEY) || "{}"
+    );
+
+    const entries = Object.entries(guestProgress)
+      .filter(([, item]) => item?.completed)
+      .map(([day, item]) => ({
+        day_number: Number(day),
+        completed: true,
+        score: Number(item.score),
+        total: Number(item.total)
+      }));
+
+    if (entries.length) {
+      const mergeResponse = await fetch("/api/academy/auth/progress", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ progress: entries })
+      });
+
+      if (!mergeResponse.ok) {
+        throw new Error("Could not merge your guest progress.");
+      }
+    }
+  }
+
+  const response = await fetch("/api/academy/auth/progress", {
+    credentials: "same-origin"
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Could not load account progress.");
+  }
+
+  const cloudProgress = {};
+
+  for (const item of data.progress || []) {
+    cloudProgress[item.day_number] = {
+      completed: Boolean(item.completed),
+      score: item.score,
+      total: item.total,
+      percentage: item.percentage,
+      completedAt: item.completed_at
+    };
+  }
+
+  activeProgressKey = accountKey;
+  writeProgress(cloudProgress);
+  await initAcademy();
 }
 
 function esc(value) {
