@@ -56,6 +56,7 @@ async function prepareProgressStorage() {
           score: item.score,
           total: item.total,
           percentage: item.percentage,
+          answers: Array.isArray(item.answers) ? item.answers : [],
           completedAt: item.completed_at
         };
       }
@@ -161,7 +162,19 @@ async function submitQuiz(e){
  try{
   const res=await fetch(`/api/academy/quiz/${day}`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({answers})});
   const data=await res.json();if(!res.ok)throw new Error(data.error||"Could not score quiz");
-  const progress=getProgress();progress[day]={completed:true,score:data.score,total:data.total,percentage:data.percentage,completedAt:new Date().toISOString()};saveProgress(progress);
+  const progress = getProgress();
+progress[day] = {
+  completed: true,
+  score: data.score,
+  total: data.total,
+  percentage: data.percentage,
+  answers: data.results.map(r => ({
+    id: r.id,
+    selected: r.selected
+  })),
+  completedAt: new Date().toISOString()
+};
+saveProgress(progress);
   document.getElementById("quiz-result").innerHTML=`<div class="result-card"><div class="section-kicker">YOUR SCORE</div><div class="score-big">${data.score}<small> / ${data.total}</small></div><h3>${data.percentage>=80?"Excellent work":data.percentage>=60?"Good effort":"Keep practising"}</h3><p>${data.percentage}% correct · Your result is saved in this browser.</p></div>
   ${data.results.map((r,i)=>`<div class="answer-review ${r.correct?"correct":"incorrect"}"><strong>${r.correct?"Correct":"Review"} · Q${i+1}</strong><p>${esc(r.explanation)}</p>${!r.correct?`<small>Correct answer: ${esc(quizQuestions[i].options[r.correctAnswer])}</small>`:""}</div>`).join("")}
   <a class="primary-button inline-button" href="/academy/">Return to course dashboard</a>`;
