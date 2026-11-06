@@ -293,12 +293,15 @@ export async function saveAcademyQuizProgress(
   day,
   score,
   total,
-  percentage
+  percentage,
+  answers
 ) {
   const user = await getSessionUser(request, env.DB);
 
   // Guest attempts remain browser-only.
   if (!user) return;
+
+  const answersJson = JSON.stringify(answers);
 
   await env.DB.prepare(`
     INSERT INTO academy_user_progress (
@@ -308,10 +311,11 @@ export async function saveAcademyQuizProgress(
       score,
       total,
       percentage,
+      answers_json,
       completed_at,
       updated_at
     )
-    VALUES (?, ?, 1, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    VALUES (?, ?, 1, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     ON CONFLICT(user_id, day_number)
     DO UPDATE SET
       completed = 1,
@@ -324,6 +328,11 @@ export async function saveAcademyQuizProgress(
         COALESCE(academy_user_progress.percentage, 0),
         excluded.percentage
       ),
+      answers_json = CASE
+        WHEN excluded.score >= COALESCE(academy_user_progress.score, 0)
+        THEN excluded.answers_json
+        ELSE academy_user_progress.answers_json
+      END,
       completed_at = COALESCE(
         academy_user_progress.completed_at,
         excluded.completed_at
@@ -334,7 +343,8 @@ export async function saveAcademyQuizProgress(
     day,
     score,
     total,
-    percentage
+    percentage,
+    answersJson
   ).run();
 }
 
