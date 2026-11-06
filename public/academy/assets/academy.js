@@ -28,40 +28,74 @@ function writeProgress(progress) {
   localStorage.setItem(activeProgressKey, JSON.stringify(progress));
 }
 
-async function syncAccountProgress(email) {
-  const accountKey = accountProgressKey(email);
-  const accountCacheExists = localStorage.getItem(accountKey) !== null;
+function getGuestProgressEntries() {
+  let guestProgress = {};
 
-  // Only merge guest progress into this account the first time.
-  if (!accountCacheExists) {
-    const guestProgress = JSON.parse(
+  try {
+    guestProgress = JSON.parse(
       localStorage.getItem(STORE_KEY) || "{}"
     );
+  } catch {
+    guestProgress = {};
+  }
 
-    const entries = Object.entries(guestProgress)
-      .filter(([, item]) => item?.completed)
-      .map(([day, item]) => ({
-        day_number: Number(day),
-        completed: true,
-        score: Number(item.score),
-        total: Number(item.total),
-        answers: Array.isArray(item.answers) ? item.answers : []
-      }));
+  return Object.entries(guestProgress)
+    .filter(([, item]) => item?.completed)
+    .map(([day, item]) => ({
+      day_number: Number(day),
+      completed: true,
+      score: Number(item.score),
+      total: Number(item.total),
+      answers: Array.isArray(item.answers) ? item.answers : []
+    }));
+}
 
-    if (entries.length) {
-      const mergeResponse = await fetch("/api/academy/auth/progress", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ progress: entries })
-      });
+function mergeProgressRecords(localProgress, cloudProgress) {
+  const merged = { ...localProgress };
 
-      if (!mergeResponse.ok) {
-        throw new Error("Could not merge your guest progress.");
-      }
+  for (const [day, cloud] of Object.entries(cloudProgress)) {
+    const local = merged[day];
+
+    if (
+      !local?.completed ||
+      Number(cloud.score) > Number(local.score) ||
+      (
+        Number(cloud.score) === Number(local.score) &&
+        (!Array.isArray(local.answers) || local.answers.length !== 3) &&
+        Array.isArray(cloud.answers) &&
+        cloud.answers.length === 3
+      )
+    ) {
+      merged[day] = cloud;
     }
   }
 
+  return merged;
+}
+
+async function syncAccountProgress(email) {
+  const accountKey = accountProgressKey(email);
+
+  // Always retry guest migration. The server upsert is safe to repeat.
+  const guestEntries = getGuestProgressEntries();
+
+  if (guestEntries.length) {
+    const mergeResponse = await fetch("/api/academy/auth/progress", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ progress: guestEntries })
+    });
+
+    if (!mergeResponse.ok) {
+      const errorData = await mergeResponse.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || "Could not merge your guest progress."
+      );
+    }
+  }
+
+  // Retrieve the account's cloud progress.
   const response = await fetch("/api/academy/auth/progress", {
     credentials: "same-origin"
   });
@@ -85,8 +119,25 @@ async function syncAccountProgress(email) {
     };
   }
 
+  // Preserve the existing browser account cache.
+  let localAccountProgress = {};
+
+  try {
+    localAccountProgress = JSON.parse(
+      localStorage.getItem(accountKey) || "{}"
+    );
+  } catch {
+    localAccountProgress = {};
+  }
+
+  const mergedProgress = mergeProgressRecords(
+    localAccountProgress,
+    cloudProgress
+  );
+
   activeProgressKey = accountKey;
-  writeProgress(cloudProgress);
+  writeProgress(mergedProgress);
+
   await initAcademy();
 }
 
