@@ -30,33 +30,99 @@ async function prepareProgressStorage() {
     }
 
     const accountKey =
-      ACCOUNT_STORE_PREFIX + encodeURIComponent(meData.user.email.toLowerCase());
+      ACCOUNT_STORE_PREFIX +
+      encodeURIComponent(meData.user.email.toLowerCase());
+
+    // Read guest progress before switching to the account key.
+    let guestProgress = {};
+
+    try {
+      guestProgress = JSON.parse(
+        localStorage.getItem(STORE_KEY) || "{}"
+      );
+    } catch {
+      guestProgress = {};
+    }
+
+    const guestEntries = Object.entries(guestProgress)
+      .filter(([, item]) => item?.completed)
+      .map(([dayNumber, item]) => ({
+        day_number: Number(dayNumber),
+        completed: true,
+        score: Number(item.score),
+        total: Number(item.total),
+        answers: Array.isArray(item.answers) ? item.answers : []
+      }));
+
+    // Upload guest progress before loading account progress.
+    if (guestEntries.length) {
+      const mergeResponse = await fetch(
+        "/api/academy/auth/progress",
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ progress: guestEntries })
+        }
+      );
+
+      if (!mergeResponse.ok) {
+        const errorData = await mergeResponse.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || "Could not merge guest progress."
+        );
+      }
+    }
 
     activeProgressKey = accountKey;
+
+    // Read existing account cache without discarding it.
+    let localProgress = {};
+
+    try {
+      localProgress = JSON.parse(
+        localStorage.getItem(accountKey) || "{}"
+      );
+    } catch {
+      localProgress = {};
+    }
 
     const response = await fetch("/api/academy/auth/progress", {
       credentials: "same-origin"
     });
 
-    if (!response.ok) return;
+    if (!response.ok) {
+      throw new Error("Could not load account progress.");
+    }
 
     const data = await response.json();
-    const localProgress = getProgress();
 
+    // Merge cloud data with the existing account cache.
     for (const item of data.progress || []) {
       const dayNumber = item.day_number;
+      const cloudAnswers = Array.isArray(item.answers)
+        ? item.answers
+        : [];
+
       const existing = localProgress[dayNumber];
 
-      if (
+      const shouldUseCloud =
         !existing?.completed ||
-        Number(item.score) > Number(existing.score)
-      ) {
+        Number(item.score) > Number(existing.score) ||
+        (
+          Number(item.score) === Number(existing.score) &&
+          (!Array.isArray(existing.answers) ||
+            existing.answers.length !== 3) &&
+          cloudAnswers.length === 3
+        );
+
+      if (shouldUseCloud) {
         localProgress[dayNumber] = {
           completed: Boolean(item.completed),
           score: item.score,
           total: item.total,
           percentage: item.percentage,
-          answers: Array.isArray(item.answers) ? item.answers : [],
+          answers: cloudAnswers,
           completedAt: item.completed_at
         };
       }
@@ -66,8 +132,10 @@ async function prepareProgressStorage() {
 
   } catch (error) {
     console.error("Academy progress sync:", error);
+    throw error;
   }
 }
+
 let quizQuestions=[];
 
 const diagramStyles = `
