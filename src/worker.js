@@ -1,4 +1,4 @@
-import { handleAcademyAuth } from "./academy-auth.js";
+import { handleAcademyAuth, saveAcademyQuizProgress } from "./academy-auth.js";
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -111,7 +111,20 @@ async function handleApi(request, env, url) {
       };
     });
     const score = results.filter(r => r.correct).length;
-    return json({ day, score, total: questions.length, percentage: Math.round(score / questions.length * 100), results });
+    const total = questions.length;
+    const percentage = Math.round(score / total * 100);
+    
+    // Save the server-calculated result for logged-in learners.
+    await saveAcademyQuizProgress(
+      request,
+      env,
+      day,
+      score,
+      total,
+      percentage
+    );
+    
+    return json({ day, score, total, percentage, results });
   }
 
   return json({ error: "API endpoint not found." }, 404);
