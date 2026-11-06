@@ -1,9 +1,72 @@
-const STORE_KEY="majy-academy-progress-v1";
+const STORE_KEY = "majy-academy-progress-v1";
+const ACCOUNT_STORE_PREFIX = "majy-academy-progress-account-v1:";
+let activeProgressKey = STORE_KEY;
 const day=Number(location.pathname.match(/lesson\/([1-7])/)?.[1]);
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function formatMnemonic(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong><u>$1</u></strong>').replace(/\n/g,"<br>")}
-function getProgress(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||"{}")}catch{return {}}}
-function saveProgress(v){localStorage.setItem(STORE_KEY,JSON.stringify(v))}
+function getProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(activeProgressKey) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveProgress(progress) {
+  localStorage.setItem(activeProgressKey, JSON.stringify(progress));
+}
+
+async function prepareProgressStorage() {
+  try {
+    const meResponse = await fetch("/api/academy/auth/me", {
+      credentials: "same-origin"
+    });
+
+    const meData = await meResponse.json();
+
+    if (!meResponse.ok || !meData.user) {
+      activeProgressKey = STORE_KEY;
+      return;
+    }
+
+    const accountKey =
+      ACCOUNT_STORE_PREFIX + encodeURIComponent(meData.user.email.toLowerCase());
+
+    activeProgressKey = accountKey;
+
+    const response = await fetch("/api/academy/auth/progress", {
+      credentials: "same-origin"
+    });
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+    const localProgress = getProgress();
+
+    for (const item of data.progress || []) {
+      const dayNumber = item.day_number;
+      const existing = localProgress[dayNumber];
+
+      if (
+        !existing?.completed ||
+        Number(item.score) > Number(existing.score)
+      ) {
+        localProgress[dayNumber] = {
+          completed: Boolean(item.completed),
+          score: item.score,
+          total: item.total,
+          percentage: item.percentage,
+          completedAt: item.completed_at
+        };
+      }
+    }
+
+    saveProgress(localProgress);
+
+  } catch (error) {
+    console.error("Academy progress sync:", error);
+  }
+}
 let quizQuestions=[];
 
 const diagramStyles = `
@@ -107,6 +170,9 @@ async function submitQuiz(e){
 }
 async function init(){
  if(!day){location.replace("/academy/");return}
+
+ await prepareProgressStorage();
+
  try{
   const [lr,qr]=await Promise.all([fetch(`/api/academy/lesson/${day}`),fetch(`/api/academy/quiz/${day}`)]);
   const ld=await lr.json();if(!lr.ok)throw new Error(ld.error||"Lesson unavailable");
