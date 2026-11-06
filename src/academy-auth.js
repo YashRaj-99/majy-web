@@ -152,10 +152,24 @@ If you did not request this, ignore this email.
 }
 
 
+
 async function sendEmail(env, to, subject, html) {
-  if (!env.RESEND_API_KEY) {
+  const apiKey = env.RESEND_API_KEY;
+
+  if (!apiKey) {
     throw new Error("RESEND_API_KEY is not configured.");
   }
+
+  // Safe SHA-256 fingerprint: never logs the API key.
+  const keyDigest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(apiKey)
+  );
+
+  const keyFingerprint = Array.from(new Uint8Array(keyDigest))
+    .map(byte => byte.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 16);
 
   const payload = {
     from: "MAJY Academy <academy@majy.in>",
@@ -164,52 +178,69 @@ async function sendEmail(env, to, subject, html) {
     html
   };
 
+  const requestBody = JSON.stringify(payload);
+
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      "authorization": "Bearer " + env.RESEND_API_KEY,
-      "content-type": "application/json"
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "Accept": "application/json"
     },
-    body: JSON.stringify(payload)
+    body: requestBody
   });
 
   const detail = await response.text();
 
-  if (!response.ok) {
-    const safeDetail = detail
-      .replaceAll(to, "[recipient redacted]")
-      .slice(0, 400);
+  const diagnostic = {
+    status: response.status,
+    statusText: response.statusText,
+    responseUrl: response.url,
+    redirected: response.redirected,
 
-    console.error("Resend diagnostic:", {
-      status: response.status,
-      statusText: response.statusText,
-      responseBody: safeDetail,
-      contentType: response.headers.get("content-type"),
-      resendId: response.headers.get("x-resend-id"),
-      sender: "academy@majy.in",
+    keyFingerprint,
+
+    request: {
+      method: "POST",
+      endpoint: "https://api.resend.com/emails",
+      contentType: "application/json",
+      bodyBytes: new TextEncoder().encode(requestBody).length,
+      sender: payload.from,
       recipientDomain: to.split("@")[1] || "unknown",
       subject,
-      htmlLength: html.length,
-      requestPayload: {
-        ...payload,
-        to: ["[recipient redacted]"],
-        html: html.replace(
-          /([?&]token=)[^&"'\s]+/gi,
-          "$1[redacted]"
-        )
-      }
-    });
+      htmlLength: html.length
+    },
+
+    responseHeaders: {
+      server: response.headers.get("server"),
+      contentType: response.headers.get("content-type"),
+      contentLength: response.headers.get("content-length"),
+      wwwAuthenticate: response.headers.get("www-authenticate"),
+      resendId: response.headers.get("x-resend-id"),
+      cfRay: response.headers.get("cf-ray"),
+      via: response.headers.get("via"),
+      date: response.headers.get("date")
+    },
+
+    responseBody: detail.slice(0, 500)
+      .replaceAll(to, "[recipient redacted]")
+  };
+
+  if (!response.ok) {
+    console.error("RESEND ROOT CAUSE DIAGNOSTIC:", diagnostic);
 
     throw new Error(
-      `Resend rejected email. HTTP ${response.status}: ${safeDetail || "Empty response body"}`
+      `Resend rejected email. HTTP ${response.status}.`
     );
   }
 
   console.log("Resend email accepted:", {
     status: response.status,
+    keyFingerprint,
     recipientDomain: to.split("@")[1] || "unknown"
   });
 }
+
 
 
 async function createToken(db, userId, type, expiry) {
