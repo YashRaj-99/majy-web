@@ -50,3 +50,4 @@ Quiz answers are graded by the Worker, so the answer key is not sent with the qu
 ## Course safety note
 
 This is educational material, not investment advice or a promise of trading returns. The sample risk figures are illustrative research settings, not personal recommendations. Verify current SEBI, exchange and broker requirements before deploying any live retail algorithm.
+

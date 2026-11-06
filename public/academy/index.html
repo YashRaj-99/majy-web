@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,26 +11,210 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/" aria-label="MAJY home"><span>MAJY</span><small>ENGINEERS & DEVELOPERS</small></a>
-    <nav><a href="/">Corporate site</a><a class="active" href="/academy/">Academy</a></nav>
+    <a class="brand" href="/" aria-label="MAJY home">
+      <span>MAJY</span>
+      <small>ENGINEERS & DEVELOPERS</small>
+    </a>
+    <nav>
+      <a href="/">Corporate site</a>
+      <a class="active" href="/academy/">Academy</a>
+    </nav>
   </header>
+
   <main class="shell">
     <section class="hero">
       <div class="eyebrow">MAJY LEARNING · INDIA MARKETS</div>
       <h1>Understand the market.<br><em>Build the method.</em></h1>
       <p>A seven-day foundation course in trading, quantitative thinking and algorithmic systems. One lesson unlocks each morning at 8:00 AM IST.</p>
-      <div class="hero-meta"><span>02–08 NOV 2026</span><span>7 LESSONS</span><span>DAILY QUIZ</span></div>
+      <div class="hero-meta">
+        <span>02–08 NOV 2026</span>
+        <span>7 LESSONS</span>
+        <span>DAILY QUIZ</span>
+      </div>
     </section>
+
+    <!-- ACCOUNT ACCESS -->
+    <section class="account-section" aria-labelledby="account-title">
+      <div class="account-heading">
+        <div class="section-kicker">YOUR MAJY ACADEMY ACCOUNT</div>
+        <h2 id="account-title">Your learning journey.</h2>
+        <p class="muted">Sign in to access your account and continue learning across devices.</p>
+      </div>
+
+      <div id="verification-notice"
+           class="auth-notice"
+           role="status"
+           aria-live="polite"
+           hidden></div>
+
+      <div id="account-panel" class="account-panel">
+        <div class="auth-tabs" role="tablist" aria-label="Account access">
+          <button class="auth-tab active"
+                  id="login-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  aria-controls="login-panel">
+            Log in
+          </button>
+
+          <button class="auth-tab"
+                  id="register-tab"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  aria-controls="register-panel">
+            Create account
+          </button>
+        </div>
+
+        <!-- LOGIN -->
+        <div id="login-panel"
+             class="auth-form-panel"
+             role="tabpanel"
+             aria-labelledby="login-tab">
+
+          <form id="login-form">
+            <label for="login-email">Email address</label>
+            <input id="login-email"
+                   name="email"
+                   type="email"
+                   autocomplete="email"
+                   maxlength="254"
+                   placeholder="you@example.com"
+                   required>
+
+            <label for="login-password">Password</label>
+            <input id="login-password"
+                   name="password"
+                   type="password"
+                   autocomplete="current-password"
+                   minlength="4"
+                   maxlength="128"
+                   placeholder="Your password"
+                   required>
+
+            <button class="primary-button auth-submit" type="submit">
+              Log in
+            </button>
+          </form>
+
+          <button class="text-button"
+                  id="show-register"
+                  type="button">
+            New to MAJY Academy? Create an account
+          </button>
+        </div>
+
+        <!-- REGISTRATION -->
+        <div id="register-panel"
+             class="auth-form-panel"
+             role="tabpanel"
+             aria-labelledby="register-tab"
+             hidden>
+
+          <form id="register-form">
+            <label for="register-email">Email address</label>
+            <input id="register-email"
+                   name="email"
+                   type="email"
+                   autocomplete="email"
+                   maxlength="254"
+                   placeholder="you@example.com"
+                   required>
+
+            <label for="register-password">Create password</label>
+            <input id="register-password"
+                   name="password"
+                   type="password"
+                   autocomplete="new-password"
+                   minlength="4"
+                   maxlength="128"
+                   placeholder="At least 4 characters"
+                   required>
+
+            <p class="field-hint">
+              Use at least 4 characters. We will send a verification link to your email.
+            </p>
+
+            <button class="primary-button auth-submit" type="submit">
+              Create account
+            </button>
+          </form>
+
+          <button class="text-button"
+                  id="show-login"
+                  type="button">
+            Already registered? Log in
+          </button>
+        </div>
+
+        <p id="auth-message"
+           class="auth-message"
+           role="status"
+           aria-live="polite"></p>
+      </div>
+
+      <!-- SIGNED-IN ACCOUNT -->
+      <div id="signed-in-panel" class="signed-in-panel" hidden>
+        <div>
+          <span class="signed-in-label">SIGNED IN</span>
+          <strong id="signed-in-email"></strong>
+          <p class="muted">Your Academy account is active on this device.</p>
+        </div>
+
+        <button class="secondary-button"
+                id="logout-button"
+                type="button">
+          Log out
+        </button>
+      </div>
+
+      <p class="guest-note">
+        You can continue browsing lessons as a guest. Your existing browser progress remains available.
+      </p>
+    </section>
+
+    <!-- EXISTING COURSE OVERVIEW -->
     <section class="overview">
-      <div><div class="section-kicker">YOUR COURSE</div><h2>Trading foundations</h2><p class="muted">Learn the concepts first. Test ideas on paper before risking money.</p></div>
-      <div class="progress-card"><div class="progress-top"><span>COURSE PROGRESS</span><strong id="progress-label">0 / 7 complete</strong></div><div class="progress-track"><span id="progress-bar"></span></div><p id="progress-note">Your quiz results are saved in this browser.</p></div>
+      <div>
+        <div class="section-kicker">YOUR COURSE</div>
+        <h2>Trading foundations</h2>
+        <p class="muted">Learn the concepts first. Test ideas on paper before risking money.</p>
+      </div>
+
+      <div class="progress-card">
+        <div class="progress-top">
+          <span>COURSE PROGRESS</span>
+          <strong id="progress-label">0 / 7 complete</strong>
+        </div>
+        <div class="progress-track">
+          <span id="progress-bar"></span>
+        </div>
+        <p id="progress-note">Your quiz results are saved in this browser.</p>
+      </div>
     </section>
+
     <section class="lesson-section">
-      <div class="section-heading"><div><div class="section-kicker">THE LEARNING PATH</div><h2>Seven focused sessions</h2></div><span class="timezone">08:00 AM · IST</span></div>
-      <div id="lesson-list" class="lesson-list"><p class="loading">Loading your course…</p></div>
+      <div class="section-heading">
+        <div>
+          <div class="section-kicker">THE LEARNING PATH</div>
+          <h2>Seven focused sessions</h2>
+        </div>
+        <span class="timezone">08:00 AM · IST</span>
+      </div>
+
+      <div id="lesson-list" class="lesson-list">
+        <p class="loading">Loading your course…</p>
+      </div>
     </section>
-    <footer><span>© 2026 MAJY Engineers & Developers Private Limited</span><span>Educational content · Not investment advice</span></footer>
+
+    <footer>
+      <span>© 2026 MAJY Engineers & Developers Private Limited</span>
+      <span>Educational content · Not investment advice</span>
+    </footer>
   </main>
+
   <script src="/academy/assets/academy.js"></script>
 </body>
 </html>

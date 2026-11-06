@@ -1,9 +1,73 @@
-const STORE_KEY="majy-academy-progress-v1";
+const STORE_KEY = "majy-academy-progress-v1";
+const ACCOUNT_STORE_PREFIX = "majy-academy-progress-account-v1:";
+let activeProgressKey = STORE_KEY;
 const day=Number(location.pathname.match(/lesson\/([1-7])/)?.[1]);
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function formatMnemonic(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong><u>$1</u></strong>').replace(/\n/g,"<br>")}
-function getProgress(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||"{}")}catch{return {}}}
-function saveProgress(v){localStorage.setItem(STORE_KEY,JSON.stringify(v))}
+function getProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(activeProgressKey) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveProgress(progress) {
+  localStorage.setItem(activeProgressKey, JSON.stringify(progress));
+}
+
+async function prepareProgressStorage() {
+  try {
+    const meResponse = await fetch("/api/academy/auth/me", {
+      credentials: "same-origin"
+    });
+
+    const meData = await meResponse.json();
+
+    if (!meResponse.ok || !meData.user) {
+      activeProgressKey = STORE_KEY;
+      return;
+    }
+
+    const accountKey =
+      ACCOUNT_STORE_PREFIX + encodeURIComponent(meData.user.email.toLowerCase());
+
+    activeProgressKey = accountKey;
+
+    const response = await fetch("/api/academy/auth/progress", {
+      credentials: "same-origin"
+    });
+
+    if (!response.ok) return;
+
+    const data = await response.json();
+    const localProgress = getProgress();
+
+    for (const item of data.progress || []) {
+      const dayNumber = item.day_number;
+      const existing = localProgress[dayNumber];
+
+      if (
+        !existing?.completed ||
+        Number(item.score) > Number(existing.score)
+      ) {
+        localProgress[dayNumber] = {
+          completed: Boolean(item.completed),
+          score: item.score,
+          total: item.total,
+          percentage: item.percentage,
+          answers: Array.isArray(item.answers) ? item.answers : [],
+          completedAt: item.completed_at
+        };
+      }
+    }
+
+    saveProgress(localProgress);
+
+  } catch (error) {
+    console.error("Academy progress sync:", error);
+  }
+}
 let quizQuestions=[];
 
 const diagramStyles = `
@@ -83,10 +147,143 @@ function renderLesson(l){
   <section class="content-card"><div class="section-kicker">QUICK REVISION</div><ul class="objective-list">${c.takeaways.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>
   <div class="quiz-intro"><div class="section-kicker">CHECK YOUR UNDERSTANDING</div><h2>Quick knowledge check</h2><p>Answer all three questions. You’ll see your score and an explanation for every answer.</p></div>`;
 }
-function renderQuiz(){
- const area=document.getElementById("quiz-area"); area.hidden=false;
- area.innerHTML=`<form id="quiz-form">${quizQuestions.map((q,i)=>`<fieldset class="question"><legend><span>QUESTION ${i+1}</span>${esc(q.question)}</legend><div class="answers">${q.options.map((o,j)=>`<label class="answer"><input type="radio" name="${q.id}" value="${j}" required><span>${esc(o)}</span></label>`).join("")}</div></fieldset>`).join("")}<button class="primary-button" type="submit">Submit answers</button></form><div id="quiz-result"></div>`;
- document.getElementById("quiz-form").addEventListener("submit",submitQuiz);
+async function renderQuiz() {
+  const area = document.getElementById("quiz-area");
+  area.hidden = false;
+
+  const savedProgress = getProgress()[day];
+  const savedAnswers = Array.isArray(savedProgress?.answers)
+    ? savedProgress.answers
+    : [];
+
+  const savedAnswerMap = new Map(
+    savedAnswers.map(answer => [answer.id, answer.selected])
+  );
+
+  const hasReviewableAttempt =
+    savedProgress?.completed &&
+    quizQuestions.length === 3 &&
+    quizQuestions.every(q =>
+      Number.isInteger(savedAnswerMap.get(q.id)) &&
+      savedAnswerMap.get(q.id) >= 0 &&
+      savedAnswerMap.get(q.id) < q.options.length
+    );
+
+  area.innerHTML = `
+    ${hasReviewableAttempt
+      ? `<div class="result-card">
+           <div class="section-kicker">PREVIOUS ATTEMPT</div>
+           <p>Your saved answers are shown below in review mode.</p>
+         </div>`
+      : savedProgress?.completed
+        ? `<div class="result-card">
+             <div class="section-kicker">PREVIOUS ATTEMPT</div>
+             <p>This earlier attempt was saved without answer selections.
+             Retake the quiz once to create a complete review record.</p>
+           </div>`
+        : ""
+    }
+
+    <form id="quiz-form">
+      ${quizQuestions.map((q, i) => `
+        <fieldset class="question">
+          <legend>
+            <span>QUESTION ${i + 1}</span>
+            ${esc(q.question)}
+          </legend>
+          <div class="answers">
+            ${q.options.map((option, j) => `
+              <label class="answer">
+                <input
+                  type="radio"
+                  name="${q.id}"
+                  value="${j}"
+                  ${hasReviewableAttempt && savedAnswerMap.get(q.id) === j ? "checked" : ""}
+                  ${hasReviewableAttempt ? "disabled" : ""}
+                  ${!hasReviewableAttempt ? "required" : ""}
+                >
+                <span>${esc(option)}</span>
+              </label>
+            `).join("")}
+          </div>
+        </fieldset>
+      `).join("")}
+
+      <button
+        class="primary-button"
+        type="submit"
+        ${hasReviewableAttempt ? "hidden" : ""}
+      >
+        Submit answers
+      </button>
+    </form>
+
+    <div id="quiz-result"></div>
+  `;
+
+  if (!hasReviewableAttempt) {
+    document.getElementById("quiz-form")
+      .addEventListener("submit", submitQuiz);
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/academy/quiz/${day}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        answers: savedAnswers.map(answer => ({
+          id: answer.id,
+          answer: answer.selected
+        }))
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not load quiz review.");
+    }
+
+    document.getElementById("quiz-result").innerHTML = `
+      <div class="result-card">
+        <div class="section-kicker">YOUR PREVIOUS SCORE</div>
+        <div class="score-big">
+          ${data.score}<small> / ${data.total}</small>
+        </div>
+        <h3>
+          ${data.percentage >= 80
+            ? "Excellent work"
+            : data.percentage >= 60
+              ? "Good effort"
+              : "Keep practising"}
+        </h3>
+        <p>${data.percentage}% correct · Your saved attempt is being reviewed.</p>
+      </div>
+
+      ${data.results.map((result, i) => `
+        <div class="answer-review ${result.correct ? "correct" : "incorrect"}">
+          <strong>
+            ${result.correct ? "Correct" : "Review"} · Q${i + 1}
+          </strong>
+          <p>${esc(result.explanation)}</p>
+          ${!result.correct
+            ? `<small>Correct answer: ${esc(
+                quizQuestions[i].options[result.correctAnswer]
+              )}</small>`
+            : ""}
+        </div>
+      `).join("")}
+
+      <a class="primary-button inline-button" href="/academy/">
+        Return to course dashboard
+      </a>
+    `;
+  } catch (error) {
+    document.getElementById("quiz-result").innerHTML = `
+      <p class="error">${esc(error.message)}</p>
+    `;
+  }
 }
 async function submitQuiz(e){
  e.preventDefault();
@@ -98,7 +295,19 @@ async function submitQuiz(e){
  try{
   const res=await fetch(`/api/academy/quiz/${day}`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({answers})});
   const data=await res.json();if(!res.ok)throw new Error(data.error||"Could not score quiz");
-  const progress=getProgress();progress[day]={completed:true,score:data.score,total:data.total,percentage:data.percentage,completedAt:new Date().toISOString()};saveProgress(progress);
+  const progress = getProgress();
+progress[day] = {
+  completed: true,
+  score: data.score,
+  total: data.total,
+  percentage: data.percentage,
+  answers: data.results.map(r => ({
+    id: r.id,
+    selected: r.selected
+  })),
+  completedAt: new Date().toISOString()
+};
+saveProgress(progress);
   document.getElementById("quiz-result").innerHTML=`<div class="result-card"><div class="section-kicker">YOUR SCORE</div><div class="score-big">${data.score}<small> / ${data.total}</small></div><h3>${data.percentage>=80?"Excellent work":data.percentage>=60?"Good effort":"Keep practising"}</h3><p>${data.percentage}% correct · Your result is saved in this browser.</p></div>
   ${data.results.map((r,i)=>`<div class="answer-review ${r.correct?"correct":"incorrect"}"><strong>${r.correct?"Correct":"Review"} · Q${i+1}</strong><p>${esc(r.explanation)}</p>${!r.correct?`<small>Correct answer: ${esc(quizQuestions[i].options[r.correctAnswer])}</small>`:""}</div>`).join("")}
   <a class="primary-button inline-button" href="/academy/">Return to course dashboard</a>`;
@@ -107,6 +316,9 @@ async function submitQuiz(e){
 }
 async function init(){
  if(!day){location.replace("/academy/");return}
+
+ await prepareProgressStorage();
+
  try{
   const [lr,qr]=await Promise.all([fetch(`/api/academy/lesson/${day}`),fetch(`/api/academy/quiz/${day}`)]);
   const ld=await lr.json();if(!lr.ok)throw new Error(ld.error||"Lesson unavailable");

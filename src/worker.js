@@ -1,3 +1,5 @@
+import { handleAcademyAuth, saveAcademyQuizProgress } from "./academy-auth.js";
+
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -42,6 +44,9 @@ async function publishDueLessons(db) {
 }
 
 async function handleApi(request, env, url) {
+  if (url.pathname.startsWith("/api/academy/auth/")) {
+    return handleAcademyAuth(request, env, url);
+  }
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: {
       "access-control-allow-origin": "*",
@@ -106,7 +111,24 @@ async function handleApi(request, env, url) {
       };
     });
     const score = results.filter(r => r.correct).length;
-    return json({ day, score, total: questions.length, percentage: Math.round(score / questions.length * 100), results });
+    const total = questions.length;
+    const percentage = Math.round(score / total * 100);
+    
+    // Save the server-calculated result for logged-in learners.
+   await saveAcademyQuizProgress(
+    request,
+    env,
+    day,
+    score,
+    total,
+    percentage,
+    results.map(result => ({
+      id: result.id,
+      selected: result.selected
+    }))
+  );
+    
+    return json({ day, score, total, percentage, results });
   }
 
   return json({ error: "API endpoint not found." }, 404);
@@ -119,7 +141,15 @@ export default {
       try { return await handleApi(request, env, url); }
       catch (error) {
         console.error("Academy API error:", error);
-        return json({ error: "Academy service is temporarily unavailable." }, 500);
+      
+        const diagnostic = error instanceof Error
+          ? `${error.name}: ${error.message}`
+          : "Unknown error";
+      
+        return json({
+          error: "Academy service is temporarily unavailable.",
+          diagnostic: diagnostic.slice(0, 250)
+        }, 500);
       }
     }
     return env.ASSETS.fetch(request);
