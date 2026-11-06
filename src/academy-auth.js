@@ -754,9 +754,11 @@ export async function handleAcademyAuth(request, env, url) {
         return json({ error: "Invalid lesson progress entry." }, 400);
       }
 
-      let answersJson = null;
+            let answersJson = null;
 
-      if (Array.isArray(item.answers)) {
+      // Empty answers are allowed for older guest progress records.
+      // Only validate and store answers when all three selections exist.
+      if (Array.isArray(item.answers) && item.answers.length > 0) {
         if (
           item.answers.length !== 3 ||
           item.answers.some(answer =>
