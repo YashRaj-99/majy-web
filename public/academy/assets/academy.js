@@ -385,6 +385,16 @@ function initAcademyAuth() {
 
       loginPassword.value = "";
       showSignedIn(userResponse.data.user);
+      
+      try {
+        await syncAccountProgress(userResponse.data.user.email);
+        showMessage("Login successful. Your account progress is synced.", "success");
+      } catch (syncError) {
+        showMessage(
+          "You are logged in, but progress sync failed: " + syncError.message,
+          "error"
+        );
+      }
 
     } catch (error) {
       showMessage(error.message, "error");
@@ -454,9 +464,11 @@ function initAcademyAuth() {
         throw new Error(data.error || "Unable to log out.");
       }
 
+      activeProgressKey = STORE_KEY;
       showSignedOut();
       showTab("login");
-      showMessage("You have been logged out.", "success");
+      await initAcademy();
+      showMessage("You have been logged out. Guest progress is available.", "success");
 
     } catch (error) {
       showMessage(error.message, "error");
@@ -480,6 +492,15 @@ function initAcademyAuth() {
 
       if (response.ok && data.user) {
         showSignedIn(data.user);
+      
+        try {
+          await syncAccountProgress(data.user.email);
+        } catch (syncError) {
+          showMessage(
+            "Your account is logged in, but progress sync failed: " + syncError.message,
+            "error"
+          );
+        }
       } else {
         showSignedOut();
       }
