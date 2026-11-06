@@ -287,6 +287,57 @@ async function getSessionUser(request, db) {
   return user || null;
 }
 
+export async function saveAcademyQuizProgress(
+  request,
+  env,
+  day,
+  score,
+  total,
+  percentage
+) {
+  const user = await getSessionUser(request, env.DB);
+
+  // Guest attempts remain browser-only.
+  if (!user) return;
+
+  await env.DB.prepare(`
+    INSERT INTO academy_user_progress (
+      user_id,
+      day_number,
+      completed,
+      score,
+      total,
+      percentage,
+      completed_at,
+      updated_at
+    )
+    VALUES (?, ?, 1, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT(user_id, day_number)
+    DO UPDATE SET
+      completed = 1,
+      score = MAX(
+        COALESCE(academy_user_progress.score, 0),
+        excluded.score
+      ),
+      total = excluded.total,
+      percentage = MAX(
+        COALESCE(academy_user_progress.percentage, 0),
+        excluded.percentage
+      ),
+      completed_at = COALESCE(
+        academy_user_progress.completed_at,
+        excluded.completed_at
+      ),
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(
+    user.user_id,
+    day,
+    score,
+    total,
+    percentage
+  ).run();
+}
+
 function originIsValid(request, url) {
   return request.headers.get("Origin") === url.origin;
 }
